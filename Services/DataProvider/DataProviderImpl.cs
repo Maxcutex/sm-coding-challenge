@@ -43,13 +43,7 @@ namespace sm_coding_challenge.Services.DataProvider
                         return player;
                     }
                 }
-                foreach(var player in dataResponse.Receiving)
-                {
-                    if(player.Id.Equals(id))
-                    {
-                        return player;
-                    }
-                }
+               
                 foreach(var player in dataResponse.Kicking)
                 {
                     if(player.Id.Equals(id))
