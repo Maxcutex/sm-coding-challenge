@@ -8,5 +8,6 @@ namespace sm_coding_challenge.Services.DataProvider
     {
         Task<PlayerModel> GetPlayerById(string id);
         Task<List<PlayerModel>> GetPlayersByIds(string[] listIds);
+        Task<LatestPlayersViewModel> GetLatestPlayersByIds(string[] idList);
     }
 }

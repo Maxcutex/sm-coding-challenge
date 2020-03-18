@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using sm_coding_challenge.Installers;
 using sm_coding_challenge.Services.DataProvider;
 
 namespace sm_coding_challenge
@@ -19,6 +20,7 @@ namespace sm_coding_challenge
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.InstallServicesInAssembly(Configuration);
             services.AddControllersWithViews();
 
             services.AddTransient<IDataProvider, DataProviderImpl>();
