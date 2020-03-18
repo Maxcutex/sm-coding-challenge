@@ -33,11 +33,8 @@ namespace sm_coding_challenge.Controllers
         public IActionResult Players(string ids)
         {
             var idList = ids.Split(',');
-            var returnList = new List<PlayerModel>();
-            foreach (var id in idList)
-            {
-                returnList.Add(_dataProvider.GetPlayerById(id));
-            }
+            var returnList = _dataProvider.GetPlayersByIds(idList);
+            
             return Json(returnList);
         }
 

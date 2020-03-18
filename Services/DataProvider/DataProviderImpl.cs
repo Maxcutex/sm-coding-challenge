@@ -15,6 +15,8 @@ namespace sm_coding_challenge.Services.DataProvider
 
         public async Task<PlayerModel> GetPlayerById(string id)
         {
+            var player = new PlayerModel();
+            var playerList = new List<PlayerModel>();
             var handler = new HttpClientHandler()
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
@@ -25,34 +27,14 @@ namespace sm_coding_challenge.Services.DataProvider
                 var response = client.GetAsync("https://gist.githubusercontent.com/RichardD012/a81e0d1730555bc0d8856d1be980c803/raw/3fe73fafadf7e5b699f056e55396282ff45a124b/basic.json").Result;
                 var stringData = response.Content.ReadAsStringAsync().Result;
                 var dataResponse = JsonConvert.DeserializeObject<DataResponseModel>(stringData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-                foreach(var player in dataResponse.Rushing)
+                playerList.AddRange(dataResponse.Kicking.ToList());
+                playerList.AddRange(dataResponse.Passing.ToList());
+                playerList.AddRange(dataResponse.Receiving.ToList());
+                playerList.AddRange(dataResponse.Rushing.ToList());
+                player = playerList.FirstOrDefault(x => x.Id == id);
+                if (player != null)
                 {
-                    if(player.Id.Equals(id))
-                    {
-                        return player;
-                    }
-                }
-                foreach(var player in dataResponse.Passing)
-                {
-                    if(player.Id.Equals(id))
-                    {
-                        return player;
-                    }
-                }
-                foreach(var player in dataResponse.Receiving)
-                {
-                    if(player.Id.Equals(id))
-                    {
-                        return player;
-                    }
-                }
-               
-                foreach(var player in dataResponse.Kicking)
-                {
-                    if(player.Id.Equals(id))
-                    {
-                        return player;
-                    }
+                    return player;
                 }
             }
             return null;
@@ -86,9 +68,13 @@ namespace sm_coding_challenge.Services.DataProvider
                 playerList.AddRange(rushingPlayers);
                 playerList.AddRange(passingPlayers);
                 playerList.AddRange(kickingPlayers);
+                if (playerList.Any())
+                {
+                    return playerList;
+                }
             }
 
-            return playerList;
+            return null;
         }
     }
 }
