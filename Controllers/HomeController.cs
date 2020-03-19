@@ -25,8 +25,8 @@ namespace sm_coding_challenge.Controllers
         }
 
         [HttpGet]
-        [Cached(600)]
-        public IActionResult Player(string id)
+       // [Cached(600)]
+        public async Task<IActionResult> Player(string id)
         {
             if (String.IsNullOrEmpty(id))
             {
@@ -34,7 +34,7 @@ namespace sm_coding_challenge.Controllers
             }
             try
             {
-                var player = _dataProvider.GetPlayerById(id);
+                var player = await _dataProvider.GetPlayerById(id);
                 if (player == null)
                 {
                     return NotFound($"Player with id {id} not found");
@@ -44,13 +44,14 @@ namespace sm_coding_challenge.Controllers
             catch (CustomResponseException e)
             {
                 // return Gateway error when the endpoint cannot be reached.
-                return StatusCode(502);
+                return StatusCode(502, "Data Endpoint cannot be reached");
             }
             
         }
 
         [HttpGet]
-        public IActionResult Players(string ids)
+       // [Cached(600)]
+        public async Task<IActionResult> Players(string ids)
         {
             
             if (String.IsNullOrEmpty(ids))
@@ -60,7 +61,7 @@ namespace sm_coding_challenge.Controllers
             try
             {
                 var idList = ids.Split(',').Distinct().ToArray();
-                var players = _dataProvider.GetPlayersByIds(idList);
+                var players = await _dataProvider.GetPlayersByIds(idList);
                 if (players == null)
                 {
                     return NotFound($"Player with set of Ids Not Found");
@@ -76,7 +77,8 @@ namespace sm_coding_challenge.Controllers
         }
 
         [HttpGet]
-        public IActionResult LatestPlayers(string ids)
+       /// [Cached(600)]
+        public async Task<IActionResult> LatestPlayers(string ids)
         {
             if (String.IsNullOrEmpty(ids))
             {
@@ -85,7 +87,7 @@ namespace sm_coding_challenge.Controllers
             try
             {
                 var idList = ids.Split(',').Distinct().ToArray();
-                var players = _dataProvider.GetLatestPlayersByIds(idList);
+                var players = await _dataProvider.GetLatestPlayersByIds(idList);
                 if (players == null)
                 {
                     return NotFound($"Player with set of Ids Not Found");

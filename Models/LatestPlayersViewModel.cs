@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace sm_coding_challenge.Models
 {
@@ -10,15 +11,19 @@ namespace sm_coding_challenge.Models
     public class LatestPlayersViewModel
     {
         [DataMember(Name = "receiving")]
-        public List<PlayerModel> ReceivingPlayers { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<ReceivingPlayerModel> ReceivingPlayers { get; set; }
 
         [DataMember(Name = "rushing")]
-        public List<PlayerModel> RushingPlayers { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<RushingPlayerModel> RushingPlayers { get; set; }
 
         [DataMember(Name = "passing")]
-        public List<PlayerModel> PassingPlayers { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<PassingPlayerModel> PassingPlayers { get; set; }
 
         [DataMember(Name = "kicking")]
-        public List<PlayerModel> KickingPlayers { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<KickingPlayerModel> KickingPlayers { get; set; }
     }
 }

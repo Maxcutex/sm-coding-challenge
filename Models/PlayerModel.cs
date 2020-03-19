@@ -16,16 +16,19 @@ namespace sm_coding_challenge.Models
 
         [DataMember(Name = "entry_id")]
         public string EntryId { get; set; }
-        
+
+       
+
     }
     [DataContract]
     public class ReceivingPlayerModel : PlayerModel
     {
-        /*
-         * "yds": "7",
-         "tds": "0",
-         "rec": "1"
-         */
+        [DataMember(Name = "yds")]
+        public string Yards { get; set; }
+        [DataMember(Name = "tds")]
+        public string Tds { get; set; }
+        [DataMember(Name = "rec")]
+        public string Rec { get; set; }
     }
 
     [DataContract]
@@ -44,25 +47,34 @@ namespace sm_coding_challenge.Models
     [DataContract]
     public class PassingPlayerModel : PlayerModel
     {
-        /*
-         * "yds": "177",
-         "att": "23",
-         "tds": "1",
-         "cmp": "12",
-         "int": "1"
-         */
+        [DataMember(Name = "yds")]
+        public string Yards { get; set; }
+        [DataMember(Name = "att")]
+        public string Att { get; set; }
+        [DataMember(Name = "tds")]
+        public string Tds { get; set; }
+
+        [DataMember(Name = "cmp")]
+        public string Cmp { get; set; }
+
+        [DataMember(Name = "int")]
+        public string IntValue { get; set; }
     }
 
     [DataContract]
     public class KickingPlayerModel : PlayerModel
     {
-        /*
-         *"fld_goals_made": "1",
-         "fld_goals_att": "1",
-         "extra_pt_made": "5",
-         "extra_pt_att": "5"
-         *
-         */
+        [DataMember(Name = "fld_goals_made")]
+        public string FieldGoalsMade { get; set; }
+
+        [DataMember(Name = "fld_goals_att")]
+        public string FieldGoalsAttained { get; set; }
+
+        [DataMember(Name = "extra_pt_made")]
+        public string ExtraPointMade { get; set; }
+
+        [DataMember(Name = "extra_pt_att")]
+        public string ExtraPointAttained { get; set; }
     }
 }
 

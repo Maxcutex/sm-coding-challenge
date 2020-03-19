@@ -49,7 +49,7 @@ namespace sm_coding_challenge.Cache
 
             var executedContext = await next();
 
-            if (executedContext.Result is OkObjectResult okObjectResult)
+            if (executedContext.Result is JsonResult okObjectResult)
             {
                 await cacheService.CacheResponseAsync(cacheKey, okObjectResult.Value, TimeSpan.FromSeconds(_timeToLiveSeconds));
             }
