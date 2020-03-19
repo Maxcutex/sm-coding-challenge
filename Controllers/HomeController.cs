@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using sm_coding_challenge.Cache;
 using sm_coding_challenge.Models;
 using sm_coding_challenge.Services.DataProvider;
@@ -14,9 +17,11 @@ namespace sm_coding_challenge.Controllers
     {
 
         private IDataProvider _dataProvider;
+        
         public HomeController(IDataProvider dataProvider)
         {
             _dataProvider = dataProvider ?? throw new ArgumentNullException(nameof(dataProvider));
+          
         }
 
         public IActionResult Index()
@@ -25,7 +30,7 @@ namespace sm_coding_challenge.Controllers
         }
 
         [HttpGet]
-       // [Cached(600)]
+        [Cached(600)] // implemented caching for multiple request that do not change over the range of 1 minute
         public async Task<IActionResult> Player(string id)
         {
             if (String.IsNullOrEmpty(id))
@@ -39,6 +44,7 @@ namespace sm_coding_challenge.Controllers
                 {
                     return NotFound($"Player with id {id} not found");
                 }
+                 
                 return Json(player);
             }
             catch (CustomResponseException e)
@@ -46,11 +52,16 @@ namespace sm_coding_challenge.Controllers
                 // return Gateway error when the endpoint cannot be reached.
                 return StatusCode(502, "Data Endpoint cannot be reached");
             }
-            
+            catch (HttpRequestException e)
+            {
+                // return Gateway error when the endpoint cannot be reached due to connection.
+                return StatusCode(502);
+            }
+
         }
 
         [HttpGet]
-       // [Cached(600)]
+        [Cached(600)]
         public async Task<IActionResult> Players(string ids)
         {
             
@@ -73,11 +84,16 @@ namespace sm_coding_challenge.Controllers
                 // return Gateway error when the endpoint cannot be reached.
                 return StatusCode(502);
             }
-            
+            catch (HttpRequestException e)
+            {
+                // return Gateway error when the endpoint cannot be reached due to connection.
+                return StatusCode(502);
+            }
+
         }
 
         [HttpGet]
-       /// [Cached(600)]
+        [Cached(600)]
         public async Task<IActionResult> LatestPlayers(string ids)
         {
             if (String.IsNullOrEmpty(ids))
@@ -97,6 +113,11 @@ namespace sm_coding_challenge.Controllers
             catch (CustomResponseException e)
             {
                 // return Gateway error when the endpoint cannot be reached.
+                return StatusCode(502);
+            }
+            catch (HttpRequestException e)
+            {
+                // return Gateway error when the endpoint cannot be reached due to connection.
                 return StatusCode(502);
             }
         }

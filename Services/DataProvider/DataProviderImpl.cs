@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using sm_coding_challenge.Models;
@@ -15,14 +16,16 @@ namespace sm_coding_challenge.Services.DataProvider
     public class DataProviderImpl : IDataProvider
     {
         public static TimeSpan Timeout = TimeSpan.FromSeconds(30);
-        private IResponseCacheService _iResponseCacheService;
+        private readonly IResponseCacheService _iResponseCacheService;
         private readonly IConfiguration _config;
         private Dictionary<string, bool> _tempDictionary;
+        private readonly IMapper _mapper;
 
-        public DataProviderImpl(IResponseCacheService iResponseCacheService, IConfiguration config)
+        public DataProviderImpl(IResponseCacheService iResponseCacheService, IConfiguration config, IMapper mapper)
         {
             _iResponseCacheService = iResponseCacheService;
             _config = config;
+            _mapper = mapper;
             _tempDictionary = new Dictionary<string, bool>();
         }
 
@@ -76,19 +79,23 @@ namespace sm_coding_challenge.Services.DataProvider
 
         }
 
-        public async Task<List<PlayerModel>> GetPlayersByIds(string[] listIds)
+        public async Task<List<PlayerAllAttributesModel>> GetPlayersByIds(string[] listIds)
         {
-            var playerList = new List<PlayerModel>();
+            var playerList = new List<PlayerAllAttributesModel>();
             var dataResponse = await GetDataFromEndpoint();
             var receivingPlayers = dataResponse.Receiving.Where(x => ValidateIdInList(listIds, x)!=null).ToList();
             var rushingPlayers = dataResponse.Rushing.Where(x => ValidateIdInList(listIds, x) != null).ToList();
             var passingPlayers = dataResponse.Passing.Where(x => ValidateIdInList(listIds, x) != null).ToList();
             var kickingPlayers = dataResponse.Kicking.Where(x => ValidateIdInList(listIds, x) != null).ToList();
+            var receivingWithAttributesGeneric = _mapper.Map<List<ReceivingPlayerModel>,List<PlayerAllAttributesModel>>(receivingPlayers);
+            var rushingWithAttributesGeneric = _mapper.Map<List<RushingPlayerModel>,List<PlayerAllAttributesModel>>(rushingPlayers);
+            var passingWithAttributesGeneric = _mapper.Map<List<PassingPlayerModel>,List<PlayerAllAttributesModel>>(passingPlayers);
+            var kickingWithAttributesGeneric = _mapper.Map<List<KickingPlayerModel>,List<PlayerAllAttributesModel>>(kickingPlayers);
 
-            playerList.AddRange(receivingPlayers);
-            playerList.AddRange(rushingPlayers);
-            playerList.AddRange(passingPlayers);
-            playerList.AddRange(kickingPlayers);
+            playerList.AddRange(receivingWithAttributesGeneric);
+            playerList.AddRange(rushingWithAttributesGeneric);
+            playerList.AddRange(passingWithAttributesGeneric);
+            playerList.AddRange(kickingWithAttributesGeneric);
             if (playerList.Any())
             {
                 return playerList;
@@ -119,11 +126,11 @@ namespace sm_coding_challenge.Services.DataProvider
 
             return null;
         }
-        public class ThrottlingHandler : HttpClientHandler
+        public class ThrottlingHandler : DelegatingHandler
         {
             private SemaphoreSlim _throttler;
 
-            public ThrottlingHandler(SemaphoreSlim throttler) 
+            public ThrottlingHandler(SemaphoreSlim throttler, HttpClientHandler handler) : base(handler)
             {
                 _throttler = throttler ?? throw new ArgumentNullException(nameof(throttler));
             }
@@ -132,6 +139,7 @@ namespace sm_coding_challenge.Services.DataProvider
             {
                 if (request == null) throw new ArgumentNullException(nameof(request));
 
+                // limits the number of requests that can be made on the request
                 await _throttler.WaitAsync(cancellationToken);
                 try
                 {
@@ -146,9 +154,14 @@ namespace sm_coding_challenge.Services.DataProvider
         private async Task<DataResponseModel> GetDataFromEndpoint()
         {
             HttpResponseMessage response;
-            int maxParallelism = 4;
+            // the number of parallel request that can be made to the data endpoint.
+            int maxParallelism = Convert.ToInt16(_config["maxParallelism"]);
             var dataResponse = new DataResponseModel();
+
+            // data endpoint 
             var dataUrl = _config["DataUrl"];
+
+            // The number of days the response from the data endpoint
             var timeToLiveSeconds = Convert.ToInt16(_config["DataUrlTimeToLive"]);
 
 
@@ -157,15 +170,17 @@ namespace sm_coding_challenge.Services.DataProvider
             {
                 return JsonConvert.DeserializeObject<DataResponseModel>(cachedResponse, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
             }
-            var handler = new ThrottlingHandler(new SemaphoreSlim(maxParallelism))
+            var handler = new ThrottlingHandler(new SemaphoreSlim(maxParallelism), new HttpClientHandler
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-              
-            };
+
+            });
             using (var client = new HttpClient(handler))
             {
                 client.Timeout = Timeout;
                 response = await client.GetAsync(dataUrl);
+
+                // This checks if the request was successfull or times out.
                 if (response.IsSuccessStatusCode)
                 {
                     var stringData = response.Content.ReadAsStringAsync().Result;
@@ -183,6 +198,7 @@ namespace sm_coding_challenge.Services.DataProvider
         }
     }
 
+    // Custom Exception to be raised when the data endpoint cannot be reached
     public class CustomResponseException : Exception
     {
         

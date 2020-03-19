@@ -10,7 +10,7 @@ namespace sm_coding_challenge.Services.DataProvider
         Task<PlayerModel> GetPlayerById(string id);
 
         // Added the methods for retrieving players by a string array
-        Task<List<PlayerModel>> GetPlayersByIds(string[] listIds);
+        Task<List<PlayerAllAttributesModel>> GetPlayersByIds(string[] listIds);
         Task<LatestPlayersViewModel> GetLatestPlayersByIds(string[] idList);
     }
 }
