@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -20,6 +20,7 @@ namespace sm_coding_challenge.Services.DataProvider
         private readonly IConfiguration _config;
         private Dictionary<string, bool> _tempDictionary;
         private readonly IMapper _mapper;
+        private readonly string _dataUrl;
 
         public DataProviderImpl(IResponseCacheService iResponseCacheService, IConfiguration config, IMapper mapper)
         {
@@ -27,6 +28,9 @@ namespace sm_coding_challenge.Services.DataProvider
             _config = config;
             _mapper = mapper;
             _tempDictionary = new Dictionary<string, bool>();
+
+            // data endpoint 
+            _dataUrl = _config["DataUrl"];
         }
 
         public async Task<PlayerModel> GetPlayerById(string id)
@@ -154,47 +158,53 @@ namespace sm_coding_challenge.Services.DataProvider
         private async Task<DataResponseModel> GetDataFromEndpoint()
         {
             HttpResponseMessage response;
+
             // the number of parallel request that can be made to the data endpoint.
             int maxParallelism = Convert.ToInt16(_config["maxParallelism"]);
             var dataResponse = new DataResponseModel();
 
-            // data endpoint 
-            var dataUrl = _config["DataUrl"];
+            
 
             // The number of days the response from the data endpoint
-            var timeToLiveSeconds = Convert.ToInt16(_config["DataUrlTimeToLive"]);
+            int timeToLiveSeconds = Convert.ToInt32(_config["DataUrlTimeToLive"]);
 
 
-            var cachedResponse = await _iResponseCacheService.GetCachedResponseAsync(dataUrl);
-            if (!string.IsNullOrEmpty(cachedResponse))
+            var cachedResponse = await _iResponseCacheService.GetCachedResponseAsync(_dataUrl);
+            if (string.IsNullOrEmpty(cachedResponse))
             {
-                return JsonConvert.DeserializeObject<DataResponseModel>(cachedResponse, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-            }
-            var handler = new ThrottlingHandler(new SemaphoreSlim(maxParallelism), new HttpClientHandler
-            {
-                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-
-            });
-            using (var client = new HttpClient(handler))
-            {
-                client.Timeout = Timeout;
-                response = await client.GetAsync(dataUrl);
-
-                // This checks if the request was successfull or times out.
-                if (response.IsSuccessStatusCode)
+                // The handler for the number of requests
+                var handler = new ThrottlingHandler(new SemaphoreSlim(maxParallelism), new HttpClientHandler
                 {
-                    var stringData = response.Content.ReadAsStringAsync().Result;
+                    AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
 
-                    dataResponse = JsonConvert.DeserializeObject<DataResponseModel>(stringData, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-                    await _iResponseCacheService.CacheResponseAsync(dataUrl, dataResponse, TimeSpan.FromSeconds(timeToLiveSeconds));
-                }
-                else
+                });
+                using (var client = new HttpClient(handler))
                 {
-                    throw new CustomResponseException("Endpoint Could not be reached.");
+                    client.Timeout = Timeout;
+                    response = await client.GetAsync(_dataUrl);
+
+                    // This checks if the request was successfull or times out.
+                    if (response.IsSuccessStatusCode)
+                    {
+                        cachedResponse = response.Content.ReadAsStringAsync().Result;
+
+                        await _iResponseCacheService.CacheResponseAsync(_dataUrl, dataResponse, TimeSpan.FromSeconds(timeToLiveSeconds));
+                    }
+                    else
+                    {
+                        throw new CustomResponseException("Endpoint Could not be reached.");
+                    }
                 }
             }
+            
 
-            return dataResponse;
+            return JsonConvert.DeserializeObject<DataResponseModel>(
+                cachedResponse,
+                new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto
+                }
+            ); ;
         }
     }
 
