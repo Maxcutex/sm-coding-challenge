@@ -169,7 +169,7 @@ namespace sm_coding_challenge.Services.DataProvider
             int timeToLiveSeconds = Convert.ToInt32(_config["DataUrlTimeToLive"]);
 
 
-            var cachedResponse = await _iResponseCacheService.GetCachedResponseAsync(_dataUrl);
+             var cachedResponse = await _iResponseCacheService.GetCachedResponseAsync(_dataUrl);
             if (string.IsNullOrEmpty(cachedResponse))
             {
                 // The handler for the number of requests
@@ -188,23 +188,37 @@ namespace sm_coding_challenge.Services.DataProvider
                     {
                         cachedResponse = response.Content.ReadAsStringAsync().Result;
 
+
+                        
+                        dataResponse =  JsonConvert.DeserializeObject<DataResponseModel>(
+                        cachedResponse,
+                        new JsonSerializerSettings
+                        {
+                            TypeNameHandling = TypeNameHandling.Auto
+                        }
+                    );
                         await _iResponseCacheService.CacheResponseAsync(_dataUrl, dataResponse, TimeSpan.FromSeconds(timeToLiveSeconds));
+                        return dataResponse;
                     }
                     else
                     {
                         throw new CustomResponseException("Endpoint Could not be reached.");
                     }
                 }
+                
             }
-            
-
-            return JsonConvert.DeserializeObject<DataResponseModel>(
+            else {
+                return JsonConvert.DeserializeObject<DataResponseModel>(
                 cachedResponse,
                 new JsonSerializerSettings
                 {
                     TypeNameHandling = TypeNameHandling.Auto
                 }
-            ); ;
+            );
+            }
+            
+
+            
         }
     }
 

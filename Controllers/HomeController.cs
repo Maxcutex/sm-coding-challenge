@@ -40,7 +40,7 @@ namespace sm_coding_challenge.Controllers
             try
             {
                 var player = await _dataProvider.GetPlayerById(id);
-                if (player == null)
+                if (player.Id == null)
                 {
                     return NotFound($"Player with id {id} not found");
                 }
@@ -73,7 +73,7 @@ namespace sm_coding_challenge.Controllers
             {
                 var idList = ids.Split(',').Distinct().ToArray();
                 var players = await _dataProvider.GetPlayersByIds(idList);
-                if (players == null)
+                if (!players.Any())
                 {
                     return NotFound($"Player with set of Ids Not Found");
                 }
